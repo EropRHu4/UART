@@ -43,12 +43,11 @@ output         rxBusy
 
     );
     
-wire txClk;
-wire rxClk;
+wire bClk;
 
 uart_tx uart_tx
 (
- .clk       (txClk),
+ .clk       (bClk),
  .enable    (txEnable),
  .data_in   (in),
  .start     (txStart),
@@ -59,7 +58,7 @@ uart_tx uart_tx
 
 uart_rx uart_rx
 (
- .clk       (rxClk),
+ .clk       (bClk),
  .enable    (rxEnable),
  .in        (rx),
  .data_out  (out),
@@ -71,8 +70,7 @@ uart_rx uart_rx
 BaudGenerator   BaudGenerator
 (
  .clk       (clk),
- .rxClk     (rxClk),
- .txClk     (txClk)
+ .bClk      (bClk)
 );
 
 endmodule
