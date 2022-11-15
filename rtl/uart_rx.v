@@ -33,14 +33,18 @@ output   reg      error
     );
 
 reg [1:0] state;
-reg [3:0] cnt = 0;
-reg [7:0] data;
+reg [2:0] cnt = 0; // count of bits;
+reg [7:0] data;    // recieved data;
+reg [1:0] shiftReg = 'b00;
+
 
 parameter   IDLE   = 2'b00,
-            R_DATA = 2'b10,
-            STOP   = 2'b11;
+            R_DATA = 2'b01,
+            STOP   = 2'b10;
+
 
 always @(posedge clk) begin
+    shiftReg = {shiftReg[0], in};
     case(state)
         
         IDLE: begin
@@ -51,27 +55,27 @@ always @(posedge clk) begin
             error <= 0;
             cnt <= 0;
             if (enable) begin
-                if (in == 1) begin
+                if (shiftReg[1] == 1'b1) begin
                     error <= 1;
                     state <= IDLE;
                 end
-                else begin
+                else if (shiftReg[1] == 1'b0) begin
                     state <= R_DATA;
                     busy <= 1;
                 end
             end
         end
-        
+
         R_DATA: begin
-            data[cnt] <= in;
-            if (&cnt == 0)
-                cnt <= cnt + 1;
-            else begin
-                cnt <= 0;
-                state <= STOP;
-            end
+                data[cnt] <= shiftReg[1];
+                if (&cnt == 0)
+                    cnt <= cnt + 1;
+                else begin
+                    cnt <= 0;
+                    state <= STOP;
+                end
         end
-            
+
         STOP: begin
             if (in == 0)
                 error <= 1;
@@ -83,10 +87,11 @@ always @(posedge clk) begin
                 data_out <= data;
             end
         end
-        
+
         default: state <= IDLE;
-        
+
     endcase
 end   
-    
+
 endmodule
+
