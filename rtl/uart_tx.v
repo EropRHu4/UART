@@ -22,12 +22,12 @@
 module uart_tx(
 
 input         clk,
-input         enable,
-input  [7:0]  data_in,
-input         start,
-output        out,
-output        done,
-output        busy
+input         enable,   // posibility of transmitt
+input  [7:0]  data_in,  // data for transmittion
+input         start,    // start of tx
+output   reg     out,
+output   reg     done,     // end of tx
+output   reg     busy      // tx is going
 
     );
 
@@ -35,11 +35,10 @@ parameter   IDLE   = 2'b00,
             START  = 2'b01,
             T_DATA = 2'b10,
             STOP   = 2'b11;
-    
+
 reg [2:0] state;
 reg [7:0] data;
-reg [3:0] bits = 0;
-
+reg [2:0] bits = 0;
 
 
 always @(posedge clk) begin
@@ -58,14 +57,14 @@ always @(posedge clk) begin
     
     START: begin
             busy <= 1;
-            out <= 1;
+            out <= 0; // start-bit
             state <= T_DATA;
     end
     
     T_DATA: begin
             out <= data[bits];
             if (&bits == 0)
-                bits <= bits + 1;
+                bits <= bits + 1; 
             else begin
                 bits <= 0;
                 state <= STOP;
@@ -75,13 +74,17 @@ always @(posedge clk) begin
     STOP: begin
           data <= 0;
           done <= 1;
-          state <= IDLE;
+          busy <= 0;
+          out <= 1; // stop-bit
+          if (done == 1)
+                state <= IDLE;
     end
     
     default : state <= IDLE;
     
-endcase 
+endcase
 end
 
 
 endmodule
+
