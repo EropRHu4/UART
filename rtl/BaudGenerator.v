@@ -23,28 +23,37 @@
 module BaudGenerator(
 
 input   wire  clk,
-output  reg   bClk
+input   wire  baud_en,
+output  reg   enable_clk
 
     );
 
 parameter CLOCK_RATE = 100000000;
 parameter BAUD_RATE  = 115200;
 
-parameter MAX_RATE = CLOCK_RATE / (2 * BAUD_RATE);
+parameter MAX_RATE = CLOCK_RATE / (BAUD_RATE);
 parameter CNT_WIDTH = $clog2(MAX_RATE);
 
 reg [CNT_WIDTH - 1:0] Counter = 0;
 
 initial begin
-    bClk = 1'b0;
+    enable_clk = 1'b0;
 end
 
 always @(posedge clk) begin
-    if (Counter == MAX_RATE[CNT_WIDTH-1:0]) begin
+    if ( baud_en == 1'b1 ) begin
+        if ( Counter == MAX_RATE ) begin
+            Counter <= 0;
+            enable_clk <= 1'b1;
+        end
+        else begin
+            Counter <= Counter + 1'b1;
+            enable_clk <= 1'b0;
+        end
+    end
+    else begin
+        enable_clk <= 1'b0;
         Counter <= 0;
-        bClk <= ~bClk;
-    end else begin
-        Counter <= Counter + 1'b1;
     end
 end
 
