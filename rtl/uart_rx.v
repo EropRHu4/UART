@@ -22,52 +22,44 @@
 
 module uart_rx(
 
-input          clk,
-input          enable,
-input          in,
-output   reg  [7:0]  data_out,
-output   reg      done,
-output   reg      busy,
-output   reg      error
+input                   clk,
+input                   rst_n,
+input                   enable_clk,
+input                   valid,
+input                   in,
+output   reg  [7:0]     data_out,
+output   reg            rx_ready
 
     );
 
 reg [1:0] state;
 reg [2:0] cnt = 0; // count of bits;
 reg [7:0] data;    // recieved data;
-reg [1:0] shiftReg = 'b00;
 
 
 parameter   IDLE   = 2'b00,
             R_DATA = 2'b01,
             STOP   = 2'b10;
 
-
 always @(posedge clk) begin
-    shiftReg = {shiftReg[0], in};
+    if (!rst_n) begin
+        data_out <= 0;
+        rx_ready <= 0;
+        state <= IDLE;
+        cnt <= 0;
+        data <= 0;
+    end
     case(state)
         
-        IDLE: begin
-            data_out <= 0;
-            data <= 0;
-            done <= 0;
-            busy <= 0;
-            error <= 0;
-            cnt <= 0;
-            if (enable) begin
-                if (shiftReg[1] == 1'b1) begin
-                    error <= 1;
-                    state <= IDLE;
-                end
-                else if (shiftReg[1] == 1'b0) begin
+        IDLE: if (enable_clk) begin
+                if (valid && in == 0) begin
                     state <= R_DATA;
-                    busy <= 1;
                 end
-            end
+                else state <= IDLE;
         end
 
-        R_DATA: begin
-                data[cnt] <= shiftReg[1];
+        R_DATA: if (enable_clk) begin
+                data[cnt] <= in;
                 if (&cnt == 0)
                     cnt <= cnt + 1;
                 else begin
@@ -76,22 +68,16 @@ always @(posedge clk) begin
                 end
         end
 
-        STOP: begin
-            if (in == 0)
-                error <= 1;
-            else begin
-                busy <= 0;
-                done <= 1;
+        STOP: if (enable_clk) begin
                 state <= IDLE;
                 data <= 0;
                 data_out <= data;
-            end
+                rx_ready <= 1;
         end
 
-        default: state <= IDLE;
+        default: if (enable_clk) state <= IDLE;
 
     endcase
 end   
 
 endmodule
-
