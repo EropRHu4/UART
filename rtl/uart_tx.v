@@ -21,70 +21,68 @@
 
 module uart_tx(
 
-input         clk,
-input         enable,   // posibility of transmitt
-input  [7:0]  data_in,  // data for transmittion
-input         start,    // start of tx
-output   reg     out,
-output   reg     done,     // end of tx
-output   reg     busy      // tx is going
+input                     clk,
+input                     rst_n,
+input                     enable_clk,   // for baud clock
+input                     valid,        // posibility of transmitt
+input           [7:0]     data_in,      // data for transmittion
+output   reg              tx_ready,     // info has been transmited
+output   reg              out
 
     );
 
 parameter   IDLE   = 2'b00,
-            START  = 2'b01,
-            T_DATA = 2'b10,
-            STOP   = 2'b11;
+            T_DATA = 2'b01;
 
 reg [2:0] state;
-reg [7:0] data;
-reg [2:0] bits = 0;
-
+reg [9:0] data = 0;
 
 always @(posedge clk) begin
-    case(state)
-    IDLE: begin
-            busy <= 0;
-            done <= 0;
-            out <= 1;
-            bits <= 0;
-            data <= 0;
-            if (enable && start) begin
-                data <= data_in;
-                state <= START;
-            end
-    end
+
+    case (state)
     
-    START: begin
-            busy <= 1;
-            out <= 0; // start-bit
-            state <= T_DATA;
-    end
+    IDLE: if (enable_clk && valid)
+                         state <= T_DATA;
+                
+    T_DATA: if (enable_clk && |data == 0)
+                         state <= IDLE;
+                
+    default: if (enable_clk) state <= IDLE;
     
-    T_DATA: begin
-            out <= data[bits];
-            if (&bits == 0)
-                bits <= bits + 1; 
-            else begin
-                bits <= 0;
-                state <= STOP;
-            end
-    end
-    
-    STOP: begin
-          data <= 0;
-          done <= 1;
-          busy <= 0;
-          out <= 1; // stop-bit
-          if (done == 1)
-                state <= IDLE;
-    end
-    
-    default : state <= IDLE;
-    
-endcase
+    endcase
 end
 
 
-endmodule
 
+always @(posedge clk) begin
+    if (!rst_n) begin
+        state <= IDLE;
+        data <= 0;
+        tx_ready <= 0;
+    end
+    
+    case (state)
+    IDLE: if (enable_clk) begin
+            out <= 1;
+            if (valid) begin
+                data[0] <= 0; // start bit
+                data[8:1] <= data_in;
+                data[9] <= 1; // stop bit
+            end
+    end
+    
+    T_DATA: if (enable_clk) begin
+                if (|data) begin
+                    out <= data[0];
+                    data <= data >> 1;
+                end
+                else begin
+                    data <= 0;
+                    tx_ready <= 1;
+                end
+    end
+    
+    endcase
+end
+
+endmodule
