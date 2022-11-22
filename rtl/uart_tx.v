@@ -35,7 +35,10 @@ parameter   IDLE   = 2'b00,
             T_DATA = 2'b01;
 
 reg [2:0] state;
-reg [9:0] data = 0;
+reg [10:0] data = 0;
+wire parity_bit;
+
+assign parity_bit = ^data_in[7:0] == 1 ? 1 : 0; // EVEN parity
 
 always @(posedge clk) begin
 
@@ -67,7 +70,8 @@ always @(posedge clk) begin
             if (valid) begin
                 data[0] <= 0; // start bit
                 data[8:1] <= data_in;
-                data[9] <= 1; // stop bit
+                data[9] <= parity_bit;
+                data[10] <= 1; // stop bit
             end
     end
     
