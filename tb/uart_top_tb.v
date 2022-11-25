@@ -23,43 +23,35 @@
 module uart_top_tb();
 
 reg clk;
-
+reg rst_n;
 /////////// tx //////////////////
-reg         txEnable;
-reg         txStart;
+reg         tx_valid;
 reg  [7:0]  in;
 
 wire        tx;
-wire        txDone;
-wire        txBusy;
-
+wire        tx_ready;
 /////////// rx //////////////////
 
-reg          rxEnable;
+reg          rx_valid;
 reg          rx;
 
 wire  [7:0]  out;
-wire         rxDone;
-wire         rxError;
-wire         rxBusy;
+wire         rx_ready;
 
 uart_top uart_top
 (
- .clk       (clk),
+ .clk          (clk),
+ .rst_n        (rst_n),
 /////// tx //////////
- .txEnable  (txEnable),
- .txStart   (txStart),
- .in        (in),
- .tx        (tx),
- .txDone    (txDone),
- .txBusy    (txBusy),
+ .tx_valid     (tx_valid),
+ .in           (in),
+ .tx           (tx),
+ .tx_ready     (tx_ready),
 /////// rx ///////////
- .rxEnable  (rxEnable),
- .rx        (rx),
- .out       (out),
- .rxDone    (rxDone),
- .rxError   (rxError),
- .rxBusy    (rxBusy)
+ .rx_valid     (rx_valid),
+ .rx           (rx),
+ .out          (out),
+ .rx_ready     (rx_ready)
 );
 
 
@@ -68,18 +60,17 @@ always begin
 clk = ~clk;
 end
 
-integer i = 0;
-
-reg [7:0] recieved_data = 8'b1000_1011;
+reg [7:0] recieved_data = 8'b1110_1011;
 
 initial begin
-    clk = 1'b0;
-    txEnable = 1;
-    txStart = 1;
-    //in = 8'hAB;
-    in = 8'b10001111;
-  //  #100;
-    rxEnable = 1;
+    clk = 1'b1;
+    rst_n = 0;
+    #100;
+    rst_n = 1;
+    in = 8'b1111_0011;
+    tx_valid = 1;
+    rx_valid = 1;
+    #17400;
     rx = 0;
     #17400;
     rx = recieved_data[0];
