@@ -23,54 +23,55 @@
 module uart_top(
 
 input clk,
+input rst_n,
 
 /////////// tx //////////////////
-input         txEnable,
-input         txStart,
+
+input         tx_valid,
 input  [7:0]  in,
 output        tx,
-output        txDone,
-output        txBusy,
+output        tx_ready,
 
 /////////// rx //////////////////
 
-input          rxEnable,
+input          rx_valid,
 input          rx,
 output  [7:0]  out,
-output         rxDone,
-output         rxError,
-output         rxBusy
-
+output         rx_ready
     );
-    
-wire bClk;
+
+wire enable_clk;
+wire baud_start;
+
+assign baud_start = tx_valid || rx_valid;
 
 uart_tx uart_tx
 (
- .clk       (bClk),
- .enable    (txEnable),
- .data_in   (in),
- .start     (txStart),
- .out       (tx),
- .done      (txDone),
- .busy      (txBusy)
+ .clk           (clk),
+ .rst_n         (rst_n),
+ .enable_clk    (enable_clk),
+ .data_in       (in),
+ .valid         (tx_valid),
+ .out           (tx),
+ .tx_ready      (tx_ready)
 );
 
 uart_rx uart_rx
 (
- .clk       (bClk),
- .enable    (rxEnable),
- .in        (rx),
- .data_out  (out),
- .done      (rxDone),
- .busy      (rxBusy),
- .error     (rxError)
+ .clk           (clk),
+ .rst_n         (rst_n),
+ .valid         (rx_valid),
+ .enable_clk    (enable_clk),
+ .in            (rx),
+ .data_out      (out),
+ .rx_ready      (rx_ready)
 );
 
 BaudGenerator   BaudGenerator
 (
- .clk       (clk),
- .bClk      (bClk)
+ .clk           (clk),
+ .baud_en       (baud_start),
+ .enable_clk    (enable_clk)
 );
 
 endmodule
