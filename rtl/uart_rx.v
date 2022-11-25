@@ -42,20 +42,39 @@ parameter   IDLE   = 2'b00,
             STOP   = 2'b10;
 
 always @(posedge clk) begin
-    if (!rst_n) begin
-        data_out <= 0;
-        rx_ready <= 0;
-        state <= IDLE;
-        cnt <= 0;
-        data <= 0;
-    end
     case(state)
-        
-        IDLE: if (enable_clk) begin
+    
+    IDLE: if (enable_clk) begin
                 if (valid && in == 0) begin
                     state <= R_DATA;
                 end
                 else state <= IDLE;
+          end
+    
+    R_DATA: if (enable_clk && &cnt) begin
+                state <= STOP;
+            end
+            
+    STOP: if (enable_clk) begin
+                state <= IDLE;
+          end
+          
+    default: if (enable_clk) state <= IDLE;
+    
+    endcase
+end
+
+always @(posedge clk) begin
+    if (!rst_n)
+        state <= IDLE;
+        
+    case(state)
+        
+        IDLE: if (enable_clk) begin
+                data_out <= 0;
+                rx_ready <= 0;
+                cnt <= 0;
+                data <= 0;
         end
 
         R_DATA: if (enable_clk) begin
@@ -64,18 +83,14 @@ always @(posedge clk) begin
                     cnt <= cnt + 1;
                 else begin
                     cnt <= 0;
-                    state <= STOP;
                 end
         end
 
         STOP: if (enable_clk) begin
-                state <= IDLE;
                 data <= 0;
                 data_out <= data;
                 rx_ready <= 1;
         end
-
-        default: if (enable_clk) state <= IDLE;
 
     endcase
 end   
