@@ -41,7 +41,8 @@ wire parity_bit;
 assign parity_bit = ^data_in[7:0] == 1 ? 1 : 0; // EVEN parity
 
 always @(posedge clk) begin
-
+    if (!rst_n) state <= IDLE;
+    
     case (state)
     
     IDLE: if (enable_clk && valid)
@@ -55,24 +56,19 @@ always @(posedge clk) begin
     endcase
 end
 
-
-
 always @(posedge clk) begin
     if (!rst_n) begin
-        state <= IDLE;
         data <= 0;
         tx_ready <= 0;
     end
     
     case (state)
-    IDLE: if (enable_clk) begin
+    IDLE: if (enable_clk && valid ) begin
             out <= 1;
-            if (valid) begin
-                data[0] <= 0; // start bit
-                data[8:1] <= data_in;
-                data[9] <= parity_bit;
-                data[10] <= 1; // stop bit
-            end
+            data[0] <= 0; // start bit
+            data[8:1] <= data_in;
+            data[9] <= parity_bit;
+            data[10] <= 1; // stop bit
     end
     
     T_DATA: if (enable_clk) begin
