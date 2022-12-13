@@ -30,7 +30,7 @@ output  reg  [7:0]  data_out
 
     ); 
     
-reg [15:0]  fifo_mem  [7:0];
+reg [7:0]  fifo_mem  [15:0];
 reg [3:0] wr = 4'b0000;
 reg [3:0] rd = 4'b0000;
 reg wr_en;
