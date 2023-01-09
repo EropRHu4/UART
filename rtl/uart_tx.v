@@ -23,7 +23,6 @@ module uart_tx(
 
 input                     clk,
 input                     rst_n,
-input                     enable_clk,   // for baud clock
 input                     valid,        // posibility of transmitt
 input           [7:0]     data_in,      // data for transmittion
 output   reg              tx_ready,     // info has been transmited
@@ -37,6 +36,14 @@ parameter   IDLE   = 2'b00,
 reg [2:0] state;
 reg [10:0] data = 0;
 wire parity_bit;
+wire enable_clk;
+
+BaudGenerator   BaudGenerator
+(
+ .clk           (clk),
+ .baud_en       (valid),
+ .enable_clk    (enable_clk)
+);
 
 assign parity_bit = ^data_in[7:0] == 1 ? 1 : 0; // EVEN parity
 
@@ -45,12 +52,12 @@ always @(posedge clk) begin
     
     case (state)
     
-    IDLE: if (enable_clk && valid)
+    IDLE: if ( valid )
                          state <= T_DATA;
-                
+    
     T_DATA: if (enable_clk && |data == 0)
                          state <= IDLE;
-                
+    
     default: if (enable_clk) state <= IDLE;
     
     endcase
@@ -63,7 +70,7 @@ always @(posedge clk) begin
     end
     
     case (state)
-    IDLE: if (enable_clk && valid ) begin
+    IDLE: if ( valid ) begin
             out <= 1;
             data[0] <= 0; // start bit
             data[8:1] <= data_in;
