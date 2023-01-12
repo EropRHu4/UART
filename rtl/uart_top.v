@@ -38,20 +38,33 @@ input          rx_valid,
 input          rx,
 output  [7:0]  out,
 output         rx_ready
+
+/*input  UART_TXD_IN,
+output UART_RXD_OUT*/
+//output  [9:0] LED
     );
 
-wire enable_clk;
-wire baud_start;
 
-assign baud_start = tx_valid || rx_valid;
+ reg valid = 1'b1;
+
+
+fifo_tx fifo_tx
+(
+ .clk           (clk),
+ .rst_n         (rst_n),
+ .data_in       (in),
+ .rd_en         (tx_ready),
+ .data_out      (data_out),
+ .fifo_full     (fifo_full),
+ .fifo_empty    (fifo_empty)
+);
 
 uart_tx uart_tx
 (
  .clk           (clk),
  .rst_n         (rst_n),
- .enable_clk    (enable_clk),
- .data_in       (in),
- .valid         (tx_valid),
+ .data_in       (data_out),
+ .valid         (valid),
  .out           (tx),
  .tx_ready      (tx_ready)
 );
@@ -60,18 +73,18 @@ uart_rx uart_rx
 (
  .clk           (clk),
  .rst_n         (rst_n),
- .valid         (rx_valid),
- .enable_clk    (enable_clk),
- .in            (rx),
+ .valid         (valid),
+ .in            (tx),
  .data_out      (out),
  .rx_ready      (rx_ready)
 );
 
-BaudGenerator   BaudGenerator
+/*led_controller led_controller
 (
  .clk           (clk),
- .baud_en       (baud_start),
- .enable_clk    (enable_clk)
-);
+ .rst_n         (rst_n),
+ .data_in       (out),
+ .LED           (LED)
+);*/
 
 endmodule
