@@ -66,7 +66,7 @@ end
 always @(posedge clk) begin
     if (!rst_n) begin
         data <= 0;
-        tx_ready <= 0;
+        tx_ready <= 1;
     end
     
     case (state)
@@ -79,13 +79,14 @@ always @(posedge clk) begin
     end
     
     T_DATA: if (enable_clk) begin
+            tx_ready <= 1;
                 if (|data) begin
                     out <= data[0];
                     data <= data >> 1;
                 end
                 else begin
                     data <= 0;
-                    tx_ready <= 1;
+                    tx_ready <= 0;
                 end
     end
     
@@ -93,3 +94,4 @@ always @(posedge clk) begin
 end
 
 endmodule
+
