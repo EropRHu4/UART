@@ -31,17 +31,18 @@ output   reg            rx_ready
 
     );
 
+reg [1:0] state;
+reg [3:0] cnt = 0; // count of bits;
+reg [7:0] data;    // recieved data;
+wire enable_clk;
+
+
 BaudGenerator   BaudGenerator
 (
  .clk           (clk),
  .baud_en       (|state),
  .enable_clk    (enable_clk)
 );
-
-reg [1:0] state;
-reg [3:0] cnt = 0; // count of bits;
-reg [7:0] data;    // recieved data;
-wire enable_clk;
 
 
 parameter   IDLE   = 2'b00,
@@ -103,4 +104,5 @@ always @(posedge clk) begin
 end
 
 endmodule
+
 
