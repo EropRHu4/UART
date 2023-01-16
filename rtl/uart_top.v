@@ -45,8 +45,8 @@ output UART_RXD_OUT*/
     );
 
 
- reg valid = 1'b1;
-
+reg valid = 1'b1;
+wire [7:0] data_out;
 
 fifo_tx fifo_tx
 (
