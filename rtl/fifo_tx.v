@@ -32,6 +32,12 @@ output  reg         fifo_empty
 
     );
 
+BaudGenerator   BaudGenerator
+(
+ .clk           (clk),
+ .baud_en       (rd_en),
+ .enable_clk    (enable_clk)
+);
 
 reg [7:0]  fifo_mem  [15:0];
 reg [3:0] wr_ptr;
@@ -60,7 +66,7 @@ always @(posedge clk) begin
     IDLE: begin
         if (fifo_full == 1'b0 && wr_en == 1'b1 && ((|data_in == 0) || (|data_in == 1)))
             state <= WRITE;
-        else if (fifo_empty == 1'b0 && rd_en == 1'b1)
+        else if (fifo_empty == 1'b0 && rd_en == 1'b0)
             state <= READ;
         else 
             state <= IDLE;
@@ -80,7 +86,7 @@ always @(posedge clk) begin
             end
     end
     
-    READ: begin
+    READ: if (enable_clk && rd_en == 1'b0) begin
             if (rd_ptr == 4'b1111) begin
                 data_out <= fifo_mem[rd_ptr];
  //               rd_en <= 1'b0;
@@ -96,4 +102,4 @@ always @(posedge clk) begin
     endcase
 end
 
-endmodule
+endmodule 
