@@ -56,7 +56,8 @@ fifo_tx fifo_tx
  .rd_en         (tx_ready),
  .data_out      (data_out),
  .fifo_full     (fifo_full),
- .fifo_empty    (fifo_empty)
+ .fifo_empty    (fifo_empty),
+ .wr_en         (wr_en)
 );
 
 uart_tx uart_tx
@@ -64,7 +65,7 @@ uart_tx uart_tx
  .clk           (clk),
  .rst_n         (rst_n),
  .data_in       (data_out),
- .valid         (valid),
+ .valid         (fifo_full),
  .out           (tx),
  .tx_ready      (tx_ready)
 );
