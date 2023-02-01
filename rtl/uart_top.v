@@ -27,20 +27,20 @@ input rst_n,
 
 /////////// tx //////////////////
 
-input         tx_valid,
-input  [7:0]  in,
-output        tx,
-output        tx_ready,
+//input         tx_valid,
+//input  [7:0]  in,
+//output        tx,
+//output        tx_ready,
 
 /////////// rx //////////////////
 
-input          rx_valid,
-input          rx,
-output  [7:0]  out,
-output         rx_ready
+//input          rx_valid,
+//input          rx,
+//output  [7:0]  out,
+//output         rx_ready
 
-/*input  UART_TXD_IN,
-output UART_RXD_OUT*/
+input  UART_TXD_IN,
+output UART_RXD_OUT
 //output  [9:0] LED
     );
 
@@ -54,7 +54,7 @@ fifo_tx fifo_tx
  .rst_n         (rst_n),
  .data_in       (in),
  .rd_en         (tx_ready),
- .data_out      (data_out),
+ .data_out      (UART_RXD_OUT),
  .fifo_full     (fifo_full),
  .fifo_empty    (fifo_empty),
  .wr_en         (wr_en)
@@ -64,7 +64,7 @@ uart_tx uart_tx
 (
  .clk           (clk),
  .rst_n         (rst_n),
- .data_in       (data_out),
+ .data_in       (out),
  .valid         (fifo_full),
  .out           (tx),
  .tx_ready      (tx_ready)
@@ -75,7 +75,7 @@ uart_rx uart_rx
  .clk           (clk),
  .rst_n         (rst_n),
  .valid         (valid),
- .in            (tx),
+ .in            (UART_TXD_IN),
  .data_out      (out),
  .rx_ready      (rx_ready)
 );
