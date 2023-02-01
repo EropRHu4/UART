@@ -47,6 +47,7 @@ output reg           LED16_B
 
 reg valid = 1'b1;
 wire [7:0] data_out;
+wire [7:0] out;
 
 
 always @(posedge clk) begin
