@@ -48,7 +48,7 @@ output UART_RXD_OUT
 reg valid = 1'b1;
 wire [7:0] data_out;
 
-fifo_tx fifo_tx
+/*fifo_tx fifo_tx
 (
  .clk           (clk),
  .rst_n         (rst_n),
@@ -58,7 +58,7 @@ fifo_tx fifo_tx
  .fifo_full     (fifo_full),
  .fifo_empty    (fifo_empty),
  .wr_en         (wr_en)
-);
+);*/
 
 uart_tx uart_tx
 (
@@ -66,7 +66,7 @@ uart_tx uart_tx
  .rst_n         (rst_n),
  .data_in       (out),
  .valid         (fifo_full),
- .out           (tx),
+ .out           (UART_RXD_OUT),
  .tx_ready      (tx_ready)
 );
 
