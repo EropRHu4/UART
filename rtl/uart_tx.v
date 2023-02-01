@@ -3,7 +3,7 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 01.11.2022 12:17:39
+// Create Date: 23.01.2023 15:17:39
 // Design Name: 
 // Module Name: uart_tx
 // Project Name: 
@@ -19,11 +19,12 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
+
 module uart_tx(
 
-input                     clk,
+input                     tx_clk,
 input                     rst_n,
-input                     valid,        // posibility of transmitt
+input                     tx_enabled,  //TxEnabled      // posibility of transmitt
 input           [7:0]     data_in,      // data for transmittion
 output   reg              tx_ready,     // info has been transmited
 output   reg              out
@@ -33,44 +34,52 @@ output   reg              out
 parameter   IDLE   = 2'b00,
             T_DATA = 2'b01;
 
-reg [2:0] state;
-reg [10:0] data = 0;
+reg [2:0] tx_state;
+reg [10:0] tx_data = 0;
+reg [10:0]  data;
 wire parity_bit;
 wire enable_clk;
 
-BaudGenerator   BaudGenerator
+/*BaudGenerator   BaudGenerator
 (
  .clk           (clk),
  .baud_en       (valid),
- .enable_clk    (enable_clk)
+ .baud_clk    (enable_clk)
 );
+*/
 
 assign parity_bit = ^data_in[7:0] == 1 ? 1 : 0; // EVEN parity
 
-always @(posedge clk) begin
-    if (!rst_n) state <= IDLE;
+always @(posedge tx_clk) if (tx_enabled) begin
+
+    if (!rst_n) tx_state <= IDLE;
     
-    case (state)
+    case (tx_state)
     
-    IDLE: if ( valid )
-                         state <= T_DATA;
+    IDLE: 
+    //if ( valid )
+    begin
+                         tx_state <= T_DATA;
+    end
     
     T_DATA: if (enable_clk && |data == 0)
-                         state <= IDLE;
+                         tx_state <= IDLE;
     
-    default: if (enable_clk) state <= IDLE;
+    default: if (enable_clk) tx_state <= IDLE;
     
     endcase
 end
 
-always @(posedge clk) begin
+always @(posedge tx_clk) if (tx_enabled) begin
     if (!rst_n) begin
         data <= 0;
         tx_ready <= 1;
     end
     
-    case (state)
-    IDLE: if ( valid ) begin
+    case (tx_state)
+    IDLE: 
+//    if ( valid ) 
+    begin
             out <= 1;
             data[0] <= 0; // start bit
             data[8:1] <= data_in;
