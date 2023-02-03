@@ -27,77 +27,58 @@ input rst_n,
 
 /////////// tx //////////////////
 
-/*input         tx_valid,
-input  [7:0]  in,
-output        tx,
-output        tx_ready,*/
+//input         tx_valid,
+//input  [7:0]  in,
+//output        tx,
+//output        tx_ready,
 
 /////////// rx //////////////////
 
-/*input          rx_valid,
-input          rx,
-output  [7:0]  out,
-output         rx_ready*/
+//input          rx_valid,
+//input          rx,
+//output  [7:0]  out,
+//output         rx_ready
 
 input  UART_TXD_IN,
-output UART_RXD_OUT,
-output  [15:0] LED,
-output reg           LED16_B
+output UART_RXD_OUT
+//output  [9:0] LED
     );
 
-reg valid = 1'b1;
+
+reg rx_ready = 1'b1;
 wire [7:0] data_out;
 wire [7:0] out;
 
 
-always @(posedge clk) begin
-    if (UART_TXD_IN)
-       LED16_B <= 1'b1;
-    else
-       LED16_B <= 1'b0;
-end
-
-
-
-/*fifo fifo
+/*fifo_tx fifo_tx
+(
+ .clk           (clk),
+ .rst_n         (rst_n),
+ .data_in       (in),
+ .rd_en         (tx_ready),
+ .data_out      (data_out),
+ .fifo_full     (fifo_full),
+ .fifo_empty    (fifo_empty)
+);
+*/
+uart_tx uart_tx
 (
  .clk           (clk),
  .rst_n         (rst_n),
  .data_in       (out),
- .rd_en         (tx_ready),
- .data_out      (data_out),
- .fifo_full     (fifo_full),
- .fifo_empty    (fifo_empty),
- .wr_en         (wr_en)
-);*/
-
-uart_tx uart_tx
-(
- .tx_clk        (baud_clk),
- .rst_n         (rst_n),
- .data_in       (out),
- .tx_enabled    (1'b0),
+ .ready         (valid),
  .out           (UART_RXD_OUT),
- .tx_ready      (tx_ready)
+ .tx_valid      (tx_valid)
 );
 
 uart_rx uart_rx
 (
- .rx_clk        (baud_clk),
- .clk           (clk),
- .rst_n         (rst_n),
- .rx_enabled    (valid),
- .in            (UART_TXD_IN),
- .data_out      (out),
- .rx_ready      (rx_ready),
- .LED           (LED)
-);
-
-BaudGenerator   BaudGenerator
-(
- .clk           (clk),
- .baud_en       (valid),
- .baud_clk      (baud_clk)
+ .clk              (clk),
+ .rst_n            (rst_n),
+ .ready            (1'b1),
+ .in               (UART_TXD_IN),
+ .data_out         (out),
+ .rx_valid         (valid)
 );
 
 /*led_controller led_controller
