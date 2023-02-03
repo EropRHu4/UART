@@ -22,11 +22,11 @@
 
 module uart_tx(
 
-input                     tx_clk,
+input                     clk,
 input                     rst_n,
-input                     tx_enabled,  //TxEnabled      // posibility of transmitt
+input                     ready,        // smth is ready to recieve byte
 input           [7:0]     data_in,      // data for transmittion
-output   reg              tx_ready,     // info has been transmited
+output   reg              tx_valid,     // byte has been transmitted
 output   reg              out
 
     );
@@ -34,52 +34,50 @@ output   reg              out
 parameter   IDLE   = 2'b00,
             T_DATA = 2'b01;
 
-reg [2:0] tx_state;
-reg [10:0] tx_data = 0;
-reg [10:0]  data;
+reg [2:0] state;
+reg [10:0] data = 0;
 wire parity_bit;
 wire enable_clk;
 
-/*BaudGenerator   BaudGenerator
+BaudGenerator   BaudGenerator
 (
  .clk           (clk),
- .baud_en       (valid),
- .baud_clk    (enable_clk)
+ .start_bod     (1'b0),
+ .baud_en       (|state),
+ .enable_clk    (enable_clk)
 );
-*/
 
 assign parity_bit = ^data_in[7:0] == 1 ? 1 : 0; // EVEN parity
 
-always @(posedge tx_clk) if (tx_enabled) begin
-
-    if (!rst_n) tx_state <= IDLE;
+always @(posedge clk) begin
+    if (!rst_n) state <= IDLE;
     
-    case (tx_state)
+    case (state)
     
-    IDLE: 
-    //if ( valid )
-    begin
-                         tx_state <= T_DATA;
-    end
+    IDLE: begin 
+            if ( ready )
+               state <= T_DATA;
+            else
+               state <= IDLE;
+          end
     
     T_DATA: if (enable_clk && |data == 0)
-                         tx_state <= IDLE;
+                         state <= IDLE;
     
-    default: if (enable_clk) tx_state <= IDLE;
+    default: if (enable_clk) state <= IDLE;
     
     endcase
 end
 
-always @(posedge tx_clk) if (tx_enabled) begin
+always @(posedge clk) begin
     if (!rst_n) begin
         data <= 0;
-        tx_ready <= 1;
+        tx_valid <= 0;
+        out <= 1;
     end
     
-    case (tx_state)
-    IDLE: 
-//    if ( valid ) 
-    begin
+    case (state)
+    IDLE: begin
             out <= 1;
             data[0] <= 0; // start bit
             data[8:1] <= data_in;
@@ -88,14 +86,13 @@ always @(posedge tx_clk) if (tx_enabled) begin
     end
     
     T_DATA: if (enable_clk) begin
-            tx_ready <= 1;
                 if (|data) begin
                     out <= data[0];
                     data <= data >> 1;
                 end
                 else begin
                     data <= 0;
-                    tx_ready <= 0;
+                    tx_valid <= 1;
                 end
     end
     
@@ -103,4 +100,3 @@ always @(posedge tx_clk) if (tx_enabled) begin
 end
 
 endmodule
-
