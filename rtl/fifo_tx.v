@@ -20,99 +20,73 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module fifo_tx(
-
-input               clk,
-input               rst_n,
-input        [7:0]  data_in,
-input               rd_en,
-output  wire  [7:0]  data_out,
-output  reg         fifo_full,
-output  reg         fifo_empty
-
-    );
-
-reg [3:0] wr_ptr;
-reg [3:0] rd_ptr;
-reg wr_en;
-//reg rd_en;
-reg [1:0] state;
-
-wire [7:0] mem_out;
-
-parameter IDLE  = 2'b00;
-parameter WRITE = 2'b01;
-parameter READ  = 2'b10;
-
-assign data_out = mem_out;
-
-BaudGenerator   BaudGenerator
+module fifo
+# (
+  parameter width = 8, depth = 10
+)
 (
- .clk           (clk),
- .baud_en       (rd_en),
- .enable_clk    (enable_clk)
+  input                clk,
+  input                rst_n,
+  input                push,
+  input                pop,
+  input  [width - 1:0] write_data,
+  output [width - 1:0] read_data,
+  output               empty,
+  output               full
+  /*`ifdef SYNTHESIS
+  ,
+  output [31:0] debug
+  `endif*/
 );
 
-fifo_memory     fifo_memory
-(
- .clk           (clk),
- .fifo_we       (wr_en),
- .data_in       (data_in),
- .wr_ptr        (wr_ptr),
- .rd_ptr        (rd_ptr),
- .data_out      (mem_out)
-);
+  //--------------------------------------------------------------------------
+  parameter pointer_width = $clog2 (depth),
+            counter_width = $clog2 (depth + 1);
 
-always @(posedge clk) begin
-    if (!rst_n) begin
-         wr_ptr <= 4'b0000;
-         rd_ptr <= 4'b0000;
-         fifo_full <= 0;
-         fifo_empty <= 1;
-         wr_en <= 1'b1;
-  //       rd_en <= 1'b0;
-         state <= IDLE;
-    end
-    
-    case(state)
-    
-    IDLE: begin
-        if (fifo_full == 1'b0 && wr_en == 1'b1 && ((|data_in == 0) || (|data_in == 1)))
-            state <= WRITE;
-        else if (fifo_empty == 1'b0 && rd_en == 1'b0)
-            state <= READ;
-        else 
-            state <= IDLE;
-    end
-    
-    WRITE: begin
-            if (wr_ptr == 4'b1111) begin
-//                mem_in <= data_in;
-                wr_en <= 1'b0;
-                fifo_full <= 1'b1;
-                fifo_empty <= 1'b0;
-                state <= READ;
-            end
-            else begin
-//                mem_in <= data_in;
-                wr_ptr <= wr_ptr + 1;
-            end
-    end
-    
-    READ: if (enable_clk && rd_en == 1'b0) begin
-            if (rd_ptr == 4'b1111) begin
- //               data_out <= mem_out;
- //               rd_en <= 1'b0;
-                fifo_empty <= 1'b1;
-                state <= IDLE;
-            end
-            else begin
-//                data_out <= mem_out;
-                rd_ptr <= rd_ptr + 1;
-            end
-    end
-    
-    endcase
-end
+  parameter [counter_width - 1:0] max_ptr =  4'b1111; //counter_width(depth - 1);
+  //--------------------------------------------------------------------------
+  reg [pointer_width - 1:0] wr_ptr, rd_ptr;
+  reg [counter_width - 1:0] cnt;
+  reg [width - 1:0] data [0: depth - 1];
+  
+  //--------------------------------------------------------------------------
+  
+ /* `ifdef SYNTHESIS
+  assign debug [31:16] = 16' (wr_ptr);
+  assign debug [15:00] = 16' (rd_ptr);
+  `endif*/
+  
+  //--------------------------------------------------------------------------
+  always @(posedge clk or posedge rst_n)
+    if (rst_n)
+      wr_ptr <= 0;
+    else if (push)
+      wr_ptr <= wr_ptr == max_ptr ? 0 : wr_ptr + 1'b1;
+  // TODO: Add logic for rd_ptr
+  always @(posedge clk or posedge rst_n)
+    if (rst_n)
+      rd_ptr <= 0;
+    else if (pop)
+      rd_ptr <= rd_ptr == max_ptr ? 0 : rd_ptr + 1'b1;
+  //--------------------------------------------------------------------------
+  always @(posedge clk)
+    if (push)
+      data[wr_ptr] <= write_data;
+  assign read_data = data[rd_ptr];
+  
+  //--------------------------------------------------------------------------
+  always @(posedge clk or posedge rst_n)
+    if (rst_n)
+      cnt <= 0;
+    else if (push && ~ pop)
+      cnt <= cnt + 1'b1;
+    else if (pop && ~ push)
+      cnt <= cnt - 1'b1;
+      
+  //--------------------------------------------------------------------------
+  assign empty = (cnt == 0);  // Same as "~| cnt"
+  // TODO: Add logic for full output
+  assign full = (cnt == depth);
+  
+endmodule
 
-endmodule 
