@@ -57,14 +57,14 @@ module fifo
   `endif*/
   
   //--------------------------------------------------------------------------
-  always @(posedge clk or posedge rst_n)
-    if (rst_n)
+  always @(posedge clk)
+    if (!rst_n)
       wr_ptr <= 0;
     else if (push)
       wr_ptr <= wr_ptr == max_ptr ? 0 : wr_ptr + 1'b1;
   // TODO: Add logic for rd_ptr
-  always @(posedge clk or posedge rst_n)
-    if (rst_n)
+  always @(posedge clk)
+    if (!rst_n)
       rd_ptr <= 0;
     else if (pop)
       rd_ptr <= rd_ptr == max_ptr ? 0 : rd_ptr + 1'b1;
@@ -75,8 +75,8 @@ module fifo
   assign read_data = data[rd_ptr];
   
   //--------------------------------------------------------------------------
-  always @(posedge clk or posedge rst_n)
-    if (rst_n)
+  always @(posedge clk)
+    if (!rst_n)
       cnt <= 0;
     else if (push && ~ pop)
       cnt <= cnt + 1'b1;
