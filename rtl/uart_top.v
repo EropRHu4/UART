@@ -44,49 +44,34 @@ output UART_RXD_OUT
 //output reg [15:0] LED
     );
 
-/*always @(posedge clk) begin
-    if (UART_TXD_IN) begin
-        LED[1] <= 1'b1;
-        LED[0] <= 1'b0;
-    end
-    else begin
-        LED[1] <= 1'b0;
-        LED[0] <= 1'b1;
-    end
-end
-*/
-
-/*reg a;
-reg b;*/
 reg rx_ready = 1'b1;
-wire [7:0] data_out;
-wire [7:0] out;
+wire [7:0] fifo_data_out;
+wire [7:0] rx_out;
 
-/*initial begin
-    a <= |(8'b1100_0000);
-    b <= ^(8'b0001_0000);
-end*/
 
-/*fifo_tx fifo_tx
-(
- .clk           (clk),
- .rst_n         (rst_n),
- .data_in       (in),
- .rd_en         (tx_ready),
- .data_out      (data_out),
- .fifo_full     (fifo_full),
- .fifo_empty    (fifo_empty)
-);
-*/
 uart_tx uart_tx
 (
  .clk           (clk),
  .rst_n         (rst_n),
- .data_in       (out),
- .ready         (rx_data_ready),
+ .data_in       (fifo_data_out),
+ .ready         (!fifo_empty),
  .out           (UART_RXD_OUT),
  .tx_valid      (tx_valid)
 );
+
+
+fifo fifo
+(
+ .clk           (clk),
+ .rst_n         (rst_n),
+ .push          (rx_data_ready),
+ .pop           (tx_valid),
+ .write_data    (rx_out),
+ .read_data     (fifo_data_out),
+ .full          (fifo_full),
+ .empty         (fifo_empty)
+);
+
 
 uart_rx uart_rx
 (
@@ -94,9 +79,10 @@ uart_rx uart_rx
  .rst_n                 (rst_n),
  .data_read             (1'b1),
  .in                    (UART_TXD_IN),
- .data_out              (out),
+ .data_out              (rx_out),
  .rx_data_ready         (rx_data_ready)
 );
+
 
 /*led_controller led_controller
 (
