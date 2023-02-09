@@ -39,6 +39,8 @@ reg [10:0] data = 0;
 wire parity_bit;
 wire enable_clk;
 
+reg [1:0] readySW = 0;
+
 BaudGenerator   BaudGenerator
 (
  .clk           (clk),
@@ -50,12 +52,13 @@ BaudGenerator   BaudGenerator
 assign parity_bit = ^data_in[7:0] == 1 ? 1 : 0; // EVEN parity
 
 always @(posedge clk) begin
+    readySW <= {readySW[0], ready};
     if (!rst_n) state <= IDLE;
     
     case (state)
     
     IDLE: begin 
-            if ( ready )
+            if ( readySW == 2'b01 )
                state <= T_DATA;
             else
                state <= IDLE;
@@ -78,6 +81,7 @@ always @(posedge clk) begin
     
     case (state)
     IDLE: begin
+            tx_valid <= 1'b0;
             out <= 1;
             data[0] <= 0; // start bit
             data[8:1] <= data_in;
