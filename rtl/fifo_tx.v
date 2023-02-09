@@ -22,7 +22,7 @@
 
 module fifo
 # (
-  parameter width = 8, depth = 10
+  parameter width = 8, depth = 4
 )
 (
   input                clk,
@@ -32,59 +32,56 @@ module fifo
   input  [width - 1:0] write_data,
   output [width - 1:0] read_data,
   output               empty,
-  output               full
-  /*`ifdef SYNTHESIS
-  ,
-  output [31:0] debug
-  `endif*/
+  output            full
+ 
 );
+
 
   //--------------------------------------------------------------------------
   parameter pointer_width = $clog2 (depth),
             counter_width = $clog2 (depth + 1);
 
-  parameter [counter_width - 1:0] max_ptr =  4'b1111; //counter_width(depth - 1);
+  parameter [counter_width - 1:0] max_ptr =  2'b11; //counter_width(depth - 1);
   //--------------------------------------------------------------------------
-  reg [pointer_width - 1:0] wr_ptr, rd_ptr;
-  reg [counter_width - 1:0] cnt;
+  reg [pointer_width - 1:0] wr_ptr, rd_ptr = 0;
+  reg [counter_width - 1:0] cnt = 0;
   reg [width - 1:0] data [0: depth - 1];
   
   //--------------------------------------------------------------------------
-  
- /* `ifdef SYNTHESIS
-  assign debug [31:16] = 16' (wr_ptr);
-  assign debug [15:00] = 16' (rd_ptr);
-  `endif*/
-  
-  //--------------------------------------------------------------------------
-  always @(posedge clk)
+  always @(posedge clk) begin
     if (!rst_n)
       wr_ptr <= 0;
-    else if (push)
+    else if (push && !full)
       wr_ptr <= wr_ptr == max_ptr ? 0 : wr_ptr + 1'b1;
+  end
   // TODO: Add logic for rd_ptr
-  always @(posedge clk)
+  always @(posedge clk) begin
     if (!rst_n)
       rd_ptr <= 0;
-    else if (pop)
+    else if (pop && !empty )
       rd_ptr <= rd_ptr == max_ptr ? 0 : rd_ptr + 1'b1;
+  end
   //--------------------------------------------------------------------------
-  always @(posedge clk)
-    if (push)
+  always @(posedge clk) begin
+    if (push && !full)
       data[wr_ptr] <= write_data;
+  end
+ 
+  
   assign read_data = data[rd_ptr];
   
   //--------------------------------------------------------------------------
-  always @(posedge clk)
+  always @(posedge clk) begin
     if (!rst_n)
       cnt <= 0;
-    else if (push && ~ pop)
+    else if (push && ~pop )
       cnt <= cnt + 1'b1;
-    else if (pop && ~ push)
+    else if (pop && ~push )
       cnt <= cnt - 1'b1;
+  end
       
   //--------------------------------------------------------------------------
-  assign empty = (cnt == 0);  // Same as "~| cnt"
+  assign empty = (wr_ptr == rd_ptr);  // Same as "~| cnt"
   // TODO: Add logic for full output
   assign full = (cnt == depth);
   
