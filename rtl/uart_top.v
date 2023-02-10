@@ -83,13 +83,4 @@ uart_rx uart_rx
  .rx_data_ready         (rx_data_ready)
 );
 
-
-/*led_controller led_controller
-(
- .clk           (clk),
- .rst_n         (rst_n),
- .data_in       (out),
- .LED           (LED)
-);*/
-
 endmodule
