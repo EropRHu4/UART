@@ -20,24 +20,30 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module fifo_memory(
+module memory
+# (
+  parameter width = 8, depth = 16
+)(
 
-input           clk,
-input           fifo_we,
-input   [7:0]   data_in,
-input   [3:0]   wr_ptr,
-input   [3:0]   rd_ptr,
-output  [7:0]   data_out
+input                             clk,
+input                             push,
+input                             full,
+input   [width - 1 : 0]           data_in,
+input   [pointer_width - 1 : 0]   wr_ptr,
+input   [pointer_width - 1 : 0]   rd_ptr,
+output  [width - 1 : 0]           data_out
 
     );
+    
+parameter pointer_width = $clog2 (depth);
 
-reg     [7:0]   mem [15:0];
-
-assign data_out = mem[rd_ptr[3:0]];
+reg [width - 1:0] mem [0: depth - 1];
 
 always @(posedge clk) begin
-    if (fifo_we)
-        mem[wr_ptr[3:0]] <= data_in ;
-end
-
+  if (push && !full)
+      mem[wr_ptr] <= data_in;
+  end
+ 
+  assign data_out = mem[rd_ptr];
+  
 endmodule
