@@ -83,11 +83,7 @@ always @(posedge clk) begin
     IDLE: begin
             tx_valid <= 1'b0;
             out <= 1;
-            //data[0] <= 0; // start bit
-            //data[8:1] <= data_in;
-            //data[9] <= parity_bit;
-            //data[10] <= 1; // stop bit
-        data <= {0, data_in, parity_bit, 1};
+            data[10:0] <= {1'b1, parity_bit, data_in[7:0], 1'b0};
     end
     
     T_DATA: if (enable_clk) begin
