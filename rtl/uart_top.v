@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module uart_top(
+module uart(
 
 input clk,
 input rst_n,
@@ -41,7 +41,6 @@ input rst_n,
 
 input  UART_TXD_IN,
 output UART_RXD_OUT
-//output reg [15:0] LED
     );
 
 reg rx_ready = 1'b1;
@@ -54,9 +53,9 @@ uart_tx uart_tx
  .clk           (clk),
  .rst_n         (rst_n),
  .data_in       (fifo_data_out),
- .ready         (!fifo_empty),
+ .tx_valid      (!fifo_empty),
  .out           (UART_RXD_OUT),
- .tx_valid      (tx_valid)
+ .tx_ready      (tx_ready)
 );
 
 
@@ -65,7 +64,7 @@ fifo fifo
  .clk           (clk),
  .rst_n         (rst_n),
  .push          (rx_data_ready),
- .pop           (tx_valid),
+ .pop           (tx_ready),
  .write_data    (rx_out),
  .read_data     (fifo_data_out),
  .full          (fifo_full),
