@@ -24,9 +24,9 @@ module uart_tx(
 
 input                     clk,
 input                     rst_n,
-input                     ready,        // smth is ready to recieve byte
+input                     tx_valid,     // data is on line 
 input           [7:0]     data_in,      // data for transmittion
-output   reg              tx_valid,     // byte has been transmitted
+output                    tx_ready,     // tx is ready to transmitt
 output   reg              out
 
     );
@@ -51,14 +51,16 @@ BaudGenerator   BaudGenerator
 
 assign parity_bit = ^data_in[7:0] == 1 ? 1 : 0; // EVEN parity
 
+assign tx_ready = state != IDLE ? 1 : 0;
+
 always @(posedge clk) begin
-    readySW <= {readySW[0], ready};
+    //readySW <= {readySW[0], tx_valid};
     if (!rst_n) state <= IDLE;
     
     case (state)
     
     IDLE: begin 
-            if ( readySW == 2'b01 )
+            if ( tx_valid/*readySW == 2'b01*/ )
                state <= T_DATA;
             else
                state <= IDLE;
@@ -75,13 +77,13 @@ end
 always @(posedge clk) begin
     if (!rst_n) begin
         data <= 0;
-        tx_valid <= 0;
+       // tx_ready <= 0;
         out <= 1;
     end
     
     case (state)
     IDLE: begin
-            tx_valid <= 1'b0;
+           // tx_ready <= 1'b0;
             out <= 1;
             data[10:0] <= {1'b1, parity_bit, data_in[7:0], 1'b0};
     end
@@ -93,7 +95,7 @@ always @(posedge clk) begin
                 end
                 else begin
                     data <= 0;
-                    tx_valid <= 1;
+                 //   tx_ready <= 1;
                 end
     end
     
